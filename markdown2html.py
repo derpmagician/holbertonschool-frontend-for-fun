@@ -5,22 +5,99 @@ Module for storing the markdown to html script.
 from sys import argv, stderr
 from os.path import exists
 from hashlib import md5
-
 import re
-
 from time import sleep
+
+
+def h(line):
+    """
+    Creates a heading html element.
+    <h{1..6}>...</h{1..6}>
+    """
+    line = line.replace("\n", "")
+
+    line = line.strip()
+    parse_space = line.split(" ")
+
+    level = parse_space[0].count("#")
+
+    if (level > 6):
+        return(line)
+
+    # Removes closing symbols at end of line.
+    if len(parse_space[-1]) == parse_space[-1].count("#"):
+        parse_space = parse_space[0:-1]
+
+    # Concatenates the content string.
+    content = ""
+    for word in parse_space[1:]:
+        content += word + " "
+    content = content[0:-1]
+
+    return("<h{}>{}</h{}>".format(level, content, level))
+
+
+def li(line, flags):
+    """
+    Creates a list item html element.
+    <li>...</li>
+    """
+    line = line.replace("\n", "")
+    line = line.strip()
+    parse_space = line.split(" ")
+
+    # Concatenates the content string.
+    content = ""
+    for word in parse_space[1:]:
+        content += word + " "
+    content = content[0:-1]
+    content = "<li>{}</li>\n".format(content)
+
+    # if "-s" in flags:
+    #     content = "    " + content
+
+    return(content)
+
+
+def clean_line(line):
+    """
+    Method for cleaning the format of the line off of text styling tags with
+    the use of Regular expressions.
+    <b>...<\b><em>...<\em>
+    [[...]] = md5(...)
+    ((...)) = ... with no 'C' or 'c' characters.
+    """
+    # Replace ** for <b> tags
+    line = re.sub(r"\*\*(\S+)", r"<b>\1", line)
+    line = re.sub(r"(\S+)\*\*", r"\1</b>", line)
+
+    # Replace __ for <em> tags
+    line = re.sub(r"\_\_(\S+)", r"<em>\1", line)
+    line = re.sub(r"(\S+)\_\_", r"\1</em>", line)
+
+    # Replace [[<content>]] for md5 hash of content.
+    line = re.sub(r"\[\[(.*)\]\]", md5(r"\1".encode()).hexdigest(), line)
+
+    # Replace ((<content>)) for no C characters on content.
+    result = re.search(r"(\(\((.*)\)\))", line)
+    if result is not None:
+        content = result.group(2)
+        content = re.sub("[cC]", "", content)
+        line = re.sub(r"\(\((.*)\)\)", content, line)
+
+    return(line)
 
 
 def mark2html(*argv):
     """
     Main method to parse and process markdown to html.
     """
-    input_filename = argv[1]
-    ouput_filename = argv[2]
+    inputFile = argv[1]
+    ouputFile = argv[2]
     flags = argv[3:]
 
 
-    with open(input_filename, "r") as f:
+    with open(inputFile, "r") as f:
         markdown = f.readlines()
 
     html = []
@@ -97,91 +174,11 @@ def mark2html(*argv):
     if "-v" in flags:
         print(text)
 
-    # Write into <ouput_filename> file.
-    with open(ouput_filename, "w") as f:
+    # Write into <ouputFile> file.
+    with open(ouputFile, "w") as f:
         f.write(text)
 
     exit(0)
-
-
-def h(line):
-    """
-    Creates a heading html element.
-    <h{1..6}>...</h{1..6}>
-    """
-    line = line.replace("\n", "")
-
-    line = line.strip()
-    parse_space = line.split(" ")
-
-    level = parse_space[0].count("#")
-
-    if (level > 6):
-        return(line)
-
-    # Removes closing symbols at end of line.
-    if len(parse_space[-1]) == parse_space[-1].count("#"):
-        parse_space = parse_space[0:-1]
-
-    # Concatenates the content string.
-    content = ""
-    for word in parse_space[1:]:
-        content += word + " "
-    content = content[0:-1]
-
-    return("<h{}>{}</h{}>".format(level, content, level))
-
-
-def li(line, flags):
-    """
-    Creates a list item html element.
-    <li>...</li>
-    """
-    line = line.replace("\n", "")
-    line = line.strip()
-    parse_space = line.split(" ")
-
-    # Concatenates the content string.
-    content = ""
-    for word in parse_space[1:]:
-        content += word + " "
-    content = content[0:-1]
-    content = "<li>{}</li>\n".format(content)
-
-    # if "-s" in flags:
-    #     content = "    " + content
-
-    return(content)
-
-
-def clean_line(line):
-    """
-    Method for cleaning the format of the line off of text styling tags with
-    the use of Regular expressions.
-    <b>...<\b>
-    <em>...<\em>
-    [[...]] = md5(...)
-    ((...)) = ... with no 'C' or 'c' characters.
-    """
-    # Replace ** for <b> tags
-    line = re.sub(r"\*\*(\S+)", r"<b>\1", line)
-    line = re.sub(r"(\S+)\*\*", r"\1</b>", line)
-
-    # Replace __ for <em> tags
-    line = re.sub(r"\_\_(\S+)", r"<em>\1", line)
-    line = re.sub(r"(\S+)\_\_", r"\1</em>", line)
-
-    # Replace [[<content>]] for md5 hash of content.
-    line = re.sub(r"\[\[(.*)\]\]", md5(r"\1".encode()).hexdigest(), line)
-
-    # Replace ((<content>)) for no C characters on content.
-    result = re.search(r"(\(\((.*)\)\))", line)
-    if result is not None:
-        content = result.group(2)
-        content = re.sub("[cC]", "", content)
-        line = re.sub(r"\(\((.*)\)\)", content, line)
-
-    return(line)
 
 
 def perror(*args, **kwargs):
