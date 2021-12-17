@@ -12,7 +12,7 @@ from time import sleep
 def h(line):
     """
     Creates a heading html element.
-    <h{1..6}>...</h{1..6}>
+    <h1..6>...</h1..6}>
     """
     line = line.replace("\n", "")
 
@@ -54,15 +54,14 @@ def li(line, flags):
     content = "<li>{}</li>\n".format(content)
 
     # if "-s" in flags:
-    #     content = "    " + content
+    #     content = " " + content
 
     return(content)
 
 
 def clean_line(line):
     """
-    Method for cleaning the format of the line off of text styling tags with
-    the use of Regular expressions.
+    Styling tags with the use of Regular expressions.
     <b>...<\b><em>...<\em>
     [[...]] = md5(...)
     ((...)) = ... with no 'C' or 'c' characters.
@@ -164,7 +163,7 @@ def mark2html(*argv):
 
         index += 1
 
-    # Create html "text" string with corresponding newlines.
+    # Create html text string with corresponding newlines.
     text = ""
     for line in html:
         if "\n" not in line:
